@@ -137,10 +137,22 @@ $('generate').onclick=async()=>{
  generating=true;const category=activeCategory,button=$('generate');button.disabled=true;button.setAttribute('aria-busy','true');button.innerHTML='<span class="ai-loading-spinner" aria-hidden="true"></span><span role="status">Generating questions…</span>';
  try{
   const pool=questions(category),examples=q=>({text:q.text,source:q.source||'sample',topic:q.topic||''});
-  const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(160000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.slice(-1000).flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
+  const feedbackSnapshot=JSON.stringify(pool.map(q=>[q.id,state.decisions[q.id]||'',q.text,q.note||'']));
+  const health=await fetch(aiSettings.url+'/',{signal:AbortSignal.timeout(15000),cache:'no-store'});
+  const service=await health.json();
+  if(service.version!=='feedback-28')throw Error('Your Cloudflare Worker is out of date. Deploy the latest GitHub commit before generating.');
+
+  const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(160000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
   let result;try{result=await response.json();}catch{throw Error('The Worker did not return JSON. Check its URL and deployment.');}
   if(!response.ok)throw Error(result.error||'Generation failed.');
   if(!Array.isArray(result.questions))throw Error('Unexpected Worker response.');
+  if(result.version!=='feedback-28'||!result.contextUsed)throw Error('Worker feedback check missing. Redeploy the latest Worker.');
+  const expectedKept=pool.filter(q=>state.decisions[q.id]==='kept').length;
+  const expectedRejected=[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))].length;
+  if(result.contextUsed.kept!==expectedKept||result.contextUsed.rejected!==expectedRejected)throw Error('Feedback changed or was incomplete. Generate again with your latest choices.');
+  if(JSON.stringify(questions(category).map(q=>[q.id,state.decisions[q.id]||'',q.text,q.note||'']))!==feedbackSnapshot)throw Error('Your questions or swipes changed during generation. Generate again to use your latest choices.');
+  $('generation-context').textContent='Last batch checked '+result.contextUsed.kept+' kept · '+result.contextUsed.rejected+' rejected wordings · '+result.contextUsed.seen+' seen wordings.';
+
   const norm=s=>s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim(),seen=new Set(questions(category).map(q=>norm(q.text))),additions=[];
   const batchId='batch-'+crypto.randomUUID();const usedIdeas=new Set(category==='proven'?questions(category).flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean).map(ideaFamily).filter(Boolean):[]);
   for(const q of result.questions.slice(0,10)){if(typeof q.text!=='string'||!q.text.trim()||q.text.length>1000||(category==='proven'&&isBlockedWatchSize(q.text))||seen.has(norm(q.text)))continue;const idea=category==='proven'?ideaFamily(q.text):'';if(idea&&usedIdeas.has(idea))continue;if(idea)usedIdeas.add(idea);seen.add(norm(q.text));additions.push({id:'ai-'+crypto.randomUUID(),batchId,category,text:q.text.trim(),topic:String(q.topic||'').slice(0,100),source:'ai',...(category==='knockout'?{answer:String(q.answer||'').slice(0,500),explain:String(q.explain||'').slice(0,1000)}:{})});}
