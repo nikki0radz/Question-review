@@ -134,7 +134,7 @@ $('ai-form').onsubmit=e=>{e.preventDefault();try{const url=new URL($('worker-url
 $('generate').onclick=async()=>{
  if(generating||busy)return;
  if(!aiSettings.url||!aiSettings.code){$('ai-settings').onclick();return;}
- generating=true;const category=activeCategory,button=$('generate');button.disabled=true;button.textContent='Generating…';
+ generating=true;const category=activeCategory,button=$('generate');button.disabled=true;button.setAttribute('aria-busy','true');button.innerHTML='<span class="ai-loading-spinner" aria-hidden="true"></span><span role="status">Generating questions…</span>';
  try{
   const pool=questions(category),examples=q=>({text:q.text,source:q.source||'sample'});
   const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(160000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.slice(-1000).flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
@@ -148,7 +148,7 @@ $('generate').onclick=async()=>{
   if(!commit(next=>{next.generated.push(...additions)}))return;
   if(view==='review'&&activeCategory===category&&!busy)renderReview();else if(view==='home')renderHome();
   notify(additions.length+' new questions ready to review.');
- }catch(error){notify(error.name==='TimeoutError'?'Generation timed out. Try again.':error.message==='Failed to fetch'?'Could not reach the Worker. Check the URL and deployment.':error.message);}finally{generating=false;button.disabled=false;button.textContent='✧ Generate 10 questions';}
+ }catch(error){notify(error.name==='TimeoutError'?'Generation timed out. Try again.':error.message==='Failed to fetch'?'Could not reach the Worker. Check the URL and deployment.':error.message);}finally{generating=false;button.disabled=false;button.removeAttribute('aria-busy');button.textContent='✧ Generate 10 questions';}
 };
 aiStatus();
 

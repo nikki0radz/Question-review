@@ -34,3 +34,8 @@
 .rewrite-button,.bank-row .rewrite-button{display:flex;align-items:center;justify-content:center;padding:0;line-height:1}.rewrite-button svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 #review-duplicates{margin-top:14px}.duplicate-group{border:1px solid var(--pink);border-radius:16px;padding:12px;margin:16px 0}.duplicate-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.duplicate-item p{flex:1;color:inherit;margin:0;overflow-wrap:anywhere}.duplicate-item small{display:block;color:var(--muted);margin-top:6px}.duplicate-item button{width:auto;flex-shrink:0}.duplicate-group>p{margin-top:0}
+
+#generate[aria-busy=true]{display:inline-flex;align-items:center;justify-content:center;gap:10px;opacity:1;cursor:wait}
+.ai-loading-spinner{display:inline-block;width:19px;height:19px;flex:0 0 19px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:ai-loading-spin .85s linear infinite}
+@keyframes ai-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.ai-loading-spinner{animation:none}}
