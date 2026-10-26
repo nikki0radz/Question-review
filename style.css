@@ -28,3 +28,5 @@
 @media(prefers-reduced-motion:reduce){.next-card,.next-card.follow-drag{transition:none!important}}
 
 .question-note{font-size:12px;line-height:1.5;text-align:center;color:inherit;opacity:.8;margin:-20px 0 24px;overflow-wrap:anywhere}.bank-row .bank-note{color:var(--muted);font-size:11px;line-height:1.5}#new-note,#edit-note{font-size:16px;resize:vertical;max-height:150px}
+
+.rewrite-button{font-size:22px}.bank-row{flex-wrap:wrap}.bank-row>p{flex-basis:100%}.bank-row .rewrite-button{font-size:20px}.bank-row button:last-child{margin-left:auto}
