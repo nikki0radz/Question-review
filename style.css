@@ -30,3 +30,5 @@
 .question-note{font-size:12px;line-height:1.5;text-align:center;color:inherit;opacity:.8;margin:-20px 0 24px;overflow-wrap:anywhere}.bank-row .bank-note{color:var(--muted);font-size:11px;line-height:1.5}#new-note,#edit-note{font-size:16px;resize:vertical;max-height:150px}
 
 .rewrite-button{font-size:22px}.bank-row{flex-wrap:wrap}.bank-row>p{flex-basis:100%}.bank-row .rewrite-button{font-size:20px}.bank-row button:last-child{margin-left:auto}
+
+.rewrite-button,.bank-row .rewrite-button{display:flex;align-items:center;justify-content:center;padding:0;line-height:1}.rewrite-button svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
