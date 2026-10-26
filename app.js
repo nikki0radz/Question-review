@@ -80,7 +80,7 @@ function newestBankFirst(items){
  const fallback=new Map(allQuestions().map((q,index)=>[q.id,index]));
  return [...items].sort((a,b)=>(state.bankAddedAt?.[b.id]||0)-(state.bankAddedAt?.[a.id]||0)||(historyOrder.get(b.id)||0)-(historyOrder.get(a.id)||0)||(fallback.get(b.id)||0)-(fallback.get(a.id)||0));
 }
-function renderBank(){$('bank-title').textContent=CATEGORIES.find(c=>c.id===bankCategory).name;$('add-question').hidden=bankFilter!=='kept';$('kept-tab').setAttribute('aria-pressed',String(bankFilter==='kept'));$('rejected-tab').setAttribute('aria-pressed',String(bankFilter==='rejected'));const list=$('bank-list');list.replaceChildren();const total=questions(bankCategory).filter(q=>state.decisions[q.id]===bankFilter).length;$('bank-description').textContent=total?`${total} ${bankFilter} question${total===1?'':'s'}. “Review again” puts a question back in its queue.`:`No ${bankFilter} questions yet.`;CATEGORIES.filter(cat=>cat.id===bankCategory).forEach(cat=>{const chosen=newestBankFirst(questions(cat.id).filter(q=>state.decisions[q.id]===bankFilter));if(!chosen.length)return;const heading=document.createElement('h3');heading.className='bank-section';heading.textContent=cat.name;const groupHeader=document.createElement('div');groupHeader.className='bank-section-header';groupHeader.append(heading);if(bankFilter==='kept'){const copyCategory=document.createElement('button');copyCategory.type='button';copyCategory.className='copy-category';copyCategory.textContent='Copy kept questions';copyCategory.setAttribute('aria-label','Copy kept questions for '+cat.name);copyCategory.onclick=()=>copyBank(cat.id);groupHeader.append(copyCategory);}list.append(groupHeader);chosen.forEach(q=>{const row=document.createElement('div');row.className='bank-row';const text=document.createElement('p');text.textContent=q.text;if(q.note){const note=document.createElement('small');note.className='bank-note';note.textContent=q.note;text.append(note);}if(q.source==='user'){const label=document.createElement('small');label.textContent='Your question';text.append(label);}const again=document.createElement('button');again.className='edit-pencil review-again';again.type='button';again.setAttribute('aria-label','Review again');again.title='Review again';again.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 4 10l5 5M4 10h10a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg>';again.disabled=busy;again.onclick=()=>{if(busy)return;if(commit(next=>{delete next.decisions[q.id];next.history=next.history.filter(h=>h.id!==q.id);})){renderBank();notify('Returned to review.');}};const edit=document.createElement('button');edit.className='edit-pencil';edit.type='button';edit.setAttribute('aria-label','Edit question');edit.innerHTML=$('edit-current').innerHTML;edit.disabled=busy;edit.onclick=()=>openEdit(q.id);row.append(text,edit,again);list.append(row);});});$('copy').disabled=!questions(bankCategory).some(q=>state.decisions[q.id]==='kept');}
+function renderBank(){$('review-duplicates').hidden=bankFilter!=='kept';$('bank-title').textContent=CATEGORIES.find(c=>c.id===bankCategory).name;$('add-question').hidden=bankFilter!=='kept';$('kept-tab').setAttribute('aria-pressed',String(bankFilter==='kept'));$('rejected-tab').setAttribute('aria-pressed',String(bankFilter==='rejected'));const list=$('bank-list');list.replaceChildren();const total=questions(bankCategory).filter(q=>state.decisions[q.id]===bankFilter).length;$('bank-description').textContent=total?`${total} ${bankFilter} question${total===1?'':'s'}. “Review again” puts a question back in its queue.`:`No ${bankFilter} questions yet.`;CATEGORIES.filter(cat=>cat.id===bankCategory).forEach(cat=>{const chosen=newestBankFirst(questions(cat.id).filter(q=>state.decisions[q.id]===bankFilter));if(!chosen.length)return;const heading=document.createElement('h3');heading.className='bank-section';heading.textContent=cat.name;const groupHeader=document.createElement('div');groupHeader.className='bank-section-header';groupHeader.append(heading);if(bankFilter==='kept'){const copyCategory=document.createElement('button');copyCategory.type='button';copyCategory.className='copy-category';copyCategory.textContent='Copy kept questions';copyCategory.setAttribute('aria-label','Copy kept questions for '+cat.name);copyCategory.onclick=()=>copyBank(cat.id);groupHeader.append(copyCategory);}list.append(groupHeader);chosen.forEach(q=>{const row=document.createElement('div');row.className='bank-row';const text=document.createElement('p');text.textContent=q.text;if(q.note){const note=document.createElement('small');note.className='bank-note';note.textContent=q.note;text.append(note);}if(q.source==='user'){const label=document.createElement('small');label.textContent='Your question';text.append(label);}const again=document.createElement('button');again.className='edit-pencil review-again';again.type='button';again.setAttribute('aria-label','Review again');again.title='Review again';again.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 4 10l5 5M4 10h10a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg>';again.disabled=busy;again.onclick=()=>{if(busy)return;if(commit(next=>{delete next.decisions[q.id];next.history=next.history.filter(h=>h.id!==q.id);})){renderBank();notify('Returned to review.');}};const edit=document.createElement('button');edit.className='edit-pencil';edit.type='button';edit.setAttribute('aria-label','Edit question');edit.innerHTML=$('edit-current').innerHTML;edit.disabled=busy;edit.onclick=()=>openEdit(q.id);row.append(text,edit,again);list.append(row);});});$('copy').disabled=!questions(bankCategory).some(q=>state.decisions[q.id]==='kept');}
 let editingId=null;
 function openEdit(id){
   if(busy)return;const q=allQuestions().find(q=>q.id===id);if(!q)return;
@@ -183,3 +183,43 @@ async function rewriteQuestion(id){
  finally{rewritingIds.delete(id);updateRewriteButton();if(view==='bank')renderBank();}
 }
 function updateRewriteButton(){const button=$('rewrite-current'),waiting=rewritingIds.has(current()?.id);button.disabled=busy||waiting;button.innerHTML=waiting?'<span aria-hidden="true">…</span>':"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 7v5h-5M4 17v-5h5M19.1 8a8 8 0 0 0-13.3-2M4.9 16a8 8 0 0 0 13.3 2\"/></svg>";button.setAttribute('aria-label',waiting?'Refreshing wording':'Refresh question wording');}
+
+let duplicateReviewBusy=false,duplicateGroups=[],duplicateSnapshot=new Map();
+$('close-duplicates').onclick=()=>$('duplicates-dialog').close();
+$('review-duplicates').onclick=async()=>{
+ if(duplicateReviewBusy)return;
+ if(!aiSettings.url||!aiSettings.code){$('ai-settings').onclick();return;}
+ const category=bankCategory,bank=questions(category).filter(q=>state.decisions[q.id]==='kept');
+ if(bank.length<2){notify('Keep at least two questions to compare.');return;}
+ duplicateReviewBusy=true;const button=$('review-duplicates');button.disabled=true;button.textContent='Checking for duplicates…';
+ try{
+ const response=await fetch(aiSettings.url+'/duplicates',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+aiSettings.code},signal:AbortSignal.timeout(75000),body:JSON.stringify({category,questions:bank.map(({id,text,note,answer})=>({id,text,note,answer}))})});
+ if(response.status===404)throw Error('Deploy the latest Cloudflare Worker to enable duplicate review.');
+ const result=await response.json();if(!response.ok)throw Error(result.error||'Duplicate review failed.');
+ if(!Array.isArray(result.groups))throw Error('Unexpected duplicate-review response.');
+ duplicateSnapshot=new Map(bank.map(q=>[q.id,q]));
+ duplicateGroups=result.groups.filter(g=>Array.isArray(g.ids)&&g.ids.length>=2&&g.ids.every(id=>duplicateSnapshot.has(id))&&typeof g.reason==='string');
+ renderDuplicateResults();$('duplicates-title').textContent=CATEGORIES.find(c=>c.id===category).name+' · duplicates';$('duplicates-dialog').showModal();
+ }catch(error){notify(error.name==='TimeoutError'?'Duplicate review timed out. Nothing was changed.':error.message);}
+ finally{duplicateReviewBusy=false;button.disabled=false;button.textContent='Review duplicates';}
+};
+function renderDuplicateResults(){
+ const container=$('duplicate-results');container.replaceChildren();let count=0;
+ for(const group of duplicateGroups){
+ const items=group.ids.map(id=>allQuestions().find(q=>q.id===id)).filter(q=>q&&state.decisions[q.id]==='kept'&&q.text===duplicateSnapshot.get(q.id)?.text&&q.note===duplicateSnapshot.get(q.id)?.note);
+ if(items.length<2)continue;count++;
+ const section=document.createElement('section');section.className='duplicate-group';
+ const reason=document.createElement('p');reason.textContent=group.reason;section.append(reason);
+ for(const q of items){
+ const row=document.createElement('div');row.className='duplicate-item';const text=document.createElement('p');text.textContent=q.text;
+ if(q.note){const note=document.createElement('small');note.textContent=q.note;text.append(note);}
+ const remove=document.createElement('button');remove.type='button';remove.className='copy-category';remove.textContent='Remove';remove.setAttribute('aria-label','Remove from kept: '+q.text);
+ remove.onclick=()=>{if(!window.confirm('Move this question to Rejected?\n\n'+q.text))return;
+ if(!commit(next=>{next.decisions[q.id]='rejected';next.history=next.history.filter(h=>h.id!==q.id);next.bankAddedAt=next.bankAddedAt||{};next.bankAddedAt[q.id]=Date.now();}))return;
+ renderDuplicateResults();if(view==='bank')renderBank();else if(view==='home')renderHome();notify('Moved to Rejected.');};
+ row.append(text,remove);section.append(row);
+ }
+ container.append(section);
+ }
+ if(!count){const p=document.createElement('p');p.textContent=duplicateGroups.length?'No remaining flagged pairs.':'No duplicates flagged in this scan. AI may miss some.';container.append(p);}
+}
