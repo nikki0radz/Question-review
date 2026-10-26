@@ -1,3 +1,10 @@
+function ideaFamily(text){
+ const s=text.toLowerCase();
+ if(/\b(camera|photo|photos|photograph|photographs|picture|pictures|selfie|selfies|snapshot)\b/.test(s)&&/\b(last|latest|recent|recently|newest)\b/.test(s))return 'recent-photo-or-camera-use';
+ if(/\b(full name|first and last name|complete name)\b/.test(s)&&/\b(letter|letters|long|longest|short|shortest|length|characters)\b/.test(s))return 'full-name-length';
+ if(/\b(screen time|screen-time|time on their phone|time on your phone)\b/.test(s))return 'phone-screen-time';
+ return '';
+}
 function isBlockedWatchSize(text){const s=text.toLowerCase();return /\b(watch|watches|smartwatch|smartwatches|wristwatch|wristwatches|timepiece)\b/.test(s)&&/\b(face|faces|dial|dials|screen|screens|size|sizes|biggest|largest|smallest|bigger|larger|smaller|widest|width|diameter|chunky|chunkier|chunkiest|oversized)\b/.test(s);}
 'use strict';
 const CATEGORIES=[
@@ -135,8 +142,8 @@ $('generate').onclick=async()=>{
   if(!response.ok)throw Error(result.error||'Generation failed.');
   if(!Array.isArray(result.questions))throw Error('Unexpected Worker response.');
   const norm=s=>s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim(),seen=new Set(questions(category).map(q=>norm(q.text))),additions=[];
-  const batchId='batch-'+crypto.randomUUID();
-  for(const q of result.questions.slice(0,10)){if(typeof q.text!=='string'||!q.text.trim()||q.text.length>1000||(category==='proven'&&isBlockedWatchSize(q.text))||seen.has(norm(q.text)))continue;seen.add(norm(q.text));additions.push({id:'ai-'+crypto.randomUUID(),batchId,category,text:q.text.trim(),source:'ai',...(category==='knockout'?{answer:String(q.answer||'').slice(0,500),explain:String(q.explain||'').slice(0,1000)}:{})});}
+  const batchId='batch-'+crypto.randomUUID();const usedIdeas=new Set(category==='proven'?questions(category).flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean).map(ideaFamily).filter(Boolean):[]);
+  for(const q of result.questions.slice(0,10)){if(typeof q.text!=='string'||!q.text.trim()||q.text.length>1000||(category==='proven'&&isBlockedWatchSize(q.text))||seen.has(norm(q.text)))continue;const idea=category==='proven'?ideaFamily(q.text):'';if(idea&&usedIdeas.has(idea))continue;if(idea)usedIdeas.add(idea);seen.add(norm(q.text));additions.push({id:'ai-'+crypto.randomUUID(),batchId,category,text:q.text.trim(),source:'ai',...(category==='knockout'?{answer:String(q.answer||'').slice(0,500),explain:String(q.explain||'').slice(0,1000)}:{})});}
   if(!additions.length){notify('No fresh questions returned. Try another batch.');return;}
   if(!commit(next=>{next.generated.push(...additions)}))return;
   if(view==='review'&&activeCategory===category&&!busy)renderReview();else if(view==='home')renderHome();
