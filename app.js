@@ -136,14 +136,14 @@ $('generate').onclick=async()=>{
  if(!aiSettings.url||!aiSettings.code){$('ai-settings').onclick();return;}
  generating=true;const category=activeCategory,button=$('generate');button.disabled=true;button.setAttribute('aria-busy','true');button.innerHTML='<span class="ai-loading-spinner" aria-hidden="true"></span><span role="status">Generating questions…</span>';
  try{
-  const pool=questions(category),examples=q=>({text:q.text,source:q.source||'sample'});
+  const pool=questions(category),examples=q=>({text:q.text,source:q.source||'sample',topic:q.topic||''});
   const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(160000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.slice(-1000).flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
   let result;try{result=await response.json();}catch{throw Error('The Worker did not return JSON. Check its URL and deployment.');}
   if(!response.ok)throw Error(result.error||'Generation failed.');
   if(!Array.isArray(result.questions))throw Error('Unexpected Worker response.');
   const norm=s=>s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim(),seen=new Set(questions(category).map(q=>norm(q.text))),additions=[];
   const batchId='batch-'+crypto.randomUUID();const usedIdeas=new Set(category==='proven'?questions(category).flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean).map(ideaFamily).filter(Boolean):[]);
-  for(const q of result.questions.slice(0,10)){if(typeof q.text!=='string'||!q.text.trim()||q.text.length>1000||(category==='proven'&&isBlockedWatchSize(q.text))||seen.has(norm(q.text)))continue;const idea=category==='proven'?ideaFamily(q.text):'';if(idea&&usedIdeas.has(idea))continue;if(idea)usedIdeas.add(idea);seen.add(norm(q.text));additions.push({id:'ai-'+crypto.randomUUID(),batchId,category,text:q.text.trim(),source:'ai',...(category==='knockout'?{answer:String(q.answer||'').slice(0,500),explain:String(q.explain||'').slice(0,1000)}:{})});}
+  for(const q of result.questions.slice(0,10)){if(typeof q.text!=='string'||!q.text.trim()||q.text.length>1000||(category==='proven'&&isBlockedWatchSize(q.text))||seen.has(norm(q.text)))continue;const idea=category==='proven'?ideaFamily(q.text):'';if(idea&&usedIdeas.has(idea))continue;if(idea)usedIdeas.add(idea);seen.add(norm(q.text));additions.push({id:'ai-'+crypto.randomUUID(),batchId,category,text:q.text.trim(),topic:String(q.topic||'').slice(0,100),source:'ai',...(category==='knockout'?{answer:String(q.answer||'').slice(0,500),explain:String(q.explain||'').slice(0,1000)}:{})});}
   if(!additions.length){notify('No fresh questions returned. Try another batch.');return;}
   if(!commit(next=>{next.generated.push(...additions)}))return;
   if(view==='review'&&activeCategory===category&&!busy)renderReview();else if(view==='home')renderHome();
