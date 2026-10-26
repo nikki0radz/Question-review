@@ -125,7 +125,7 @@ $('generate').onclick=async()=>{
  generating=true;const category=activeCategory,button=$('generate');button.disabled=true;button.textContent='Generating…';
  try{
   const pool=questions(category),examples=q=>({text:q.text,source:q.source||'sample'});
-  const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(110000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').slice(-60).map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.slice(-1000).flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
+  const response=await fetch(aiSettings.url+'/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSettings.code},signal:AbortSignal.timeout(160000),body:JSON.stringify({category,accepted:pool.filter(q=>state.decisions[q.id]==='kept').map(examples),rejected:[...new Set(pool.filter(q=>state.decisions[q.id]==='rejected').flatMap(q=>[q.text,q.rewriteOriginal,...(q.rewriteHistory||[])]).filter(Boolean))],existing:pool.slice(-1000).flatMap(q=>[examples(q),...(q.rewriteOriginal&&q.rewriteOriginal!==q.text?[{text:q.rewriteOriginal}]:[])])})});
   let result;try{result=await response.json();}catch{throw Error('The Worker did not return JSON. Check its URL and deployment.');}
   if(!response.ok)throw Error(result.error||'Generation failed.');
   if(!Array.isArray(result.questions))throw Error('Unexpected Worker response.');
