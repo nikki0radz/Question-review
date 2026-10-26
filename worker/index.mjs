@@ -12,9 +12,9 @@ export default {async fetch(request,env){
  if(origin&&origin!==allowed)return reply({error:'This website is not allowed.'},403);
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
  const path=new URL(request.url).pathname;
- if(request.method==='GET'&&path==='/')return reply({service:'Question Review AI',ready:!!env.OPENAI_API_KEY&&!!env.REVIEW_ACCESS_TOKEN&&env.REVIEW_ACCESS_TOKEN.length>=20});
+ if(request.method==='GET'&&path==='/')return reply({service:'Question Review AI',ready:!!env.OPENAI_API_KEY&&!!env.REVIEW_ACCESS_TOKEN});
  if(request.method!=='POST'||path!=='/generate')return reply({error:'Not found.'},404);
- if(!env.REVIEW_ACCESS_TOKEN||env.REVIEW_ACCESS_TOKEN.length<20||!env.OPENAI_API_KEY)return reply({error:'Add OPENAI_API_KEY and REVIEW_ACCESS_TOKEN (at least 20 characters) in Worker secrets, then deploy.'},503);
+ if(!env.REVIEW_ACCESS_TOKEN||!env.OPENAI_API_KEY)return reply({error:'Add OPENAI_API_KEY and REVIEW_ACCESS_TOKEN in Worker secrets, then deploy.'},503);
  if(request.headers.get('Authorization')!==`Bearer ${env.REVIEW_ACCESS_TOKEN}`)return reply({error:'Access code is incorrect.'},401);
  let body;try{const raw=await request.text();if(raw.length>150000)return reply({error:'Question context is too large.'},413);body=JSON.parse(raw);}catch{return reply({error:'Invalid request.'},400);}
  if(!rules[body.category])return reply({error:'Choose a valid category.'},400);

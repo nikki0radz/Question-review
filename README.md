@@ -18,7 +18,7 @@ The included workflow deploys to GitHub Pages. If Pages has not been enabled, ch
 
 Connect the repository to a Cloudflare Worker named question-review, branch main, root directory worker. Leave the build command blank and use deploy command npx wrangler deploy.
 
-In Worker Settings → Variables and Secrets, add runtime secrets OPENAI_API_KEY and REVIEW_ACCESS_TOKEN (a private random access code of at least 20 characters), then deploy. Do not put the OpenAI key in the frontend or commit it.
+In Worker Settings → Variables and Secrets, add runtime secrets OPENAI_API_KEY and REVIEW_ACCESS_TOKEN (a private, nonempty access code), then deploy. Do not put the OpenAI key in the frontend or commit it.
 
 Open Connect AI in the app, enter the HTTPS workers.dev URL and matching review access code. Generate 10 questions inside any category. Kept, rejected and user-written examples guide generation; new suggestions enter the review queue. Only kept questions are exported.
 
