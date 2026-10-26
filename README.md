@@ -16,7 +16,7 @@ The included workflow deploys to GitHub Pages. If Pages has not been enabled, ch
 
 ## AI suggestions
 
-Connect the repository to a Cloudflare Worker named question-review-ai, branch main, root directory worker. Leave the build command blank and use deploy command npx wrangler deploy.
+Connect the repository to a Cloudflare Worker named question-review, branch main, root directory worker. Leave the build command blank and use deploy command npx wrangler deploy.
 
 In Worker Settings → Variables and Secrets, add runtime secrets OPENAI_API_KEY and REVIEW_ACCESS_TOKEN (a private random access code of at least 20 characters), then deploy. Do not put the OpenAI key in the frontend or commit it.
 
