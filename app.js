@@ -214,12 +214,29 @@ function renderDuplicateResults(){
  const row=document.createElement('div');row.className='duplicate-item';const text=document.createElement('p');text.textContent=q.text;
  if(q.note){const note=document.createElement('small');note.textContent=q.note;text.append(note);}
  const remove=document.createElement('button');remove.type='button';remove.className='copy-category';remove.textContent='Remove';remove.setAttribute('aria-label','Remove from kept: '+q.text);
- remove.onclick=()=>{if(!window.confirm('Move this question to Rejected?\n\n'+q.text))return;
- if(!commit(next=>{next.decisions[q.id]='rejected';next.history=next.history.filter(h=>h.id!==q.id);next.bankAddedAt=next.bankAddedAt||{};next.bankAddedAt[q.id]=Date.now();}))return;
- renderDuplicateResults();if(view==='bank')renderBank();else if(view==='home')renderHome();notify('Moved to Rejected.');};
+ remove.onclick=()=>openRemoveConfirmation(q);
  row.append(text,remove);section.append(row);
  }
  container.append(section);
  }
  if(!count){const p=document.createElement('p');p.textContent=duplicateGroups.length?'No remaining flagged pairs.':'No duplicates flagged in this scan. AI may miss some.';container.append(p);}
 }
+
+let pendingRemoval=null;
+function openRemoveConfirmation(q){
+ pendingRemoval={id:q.id,text:q.text};
+ $('remove-question-text').textContent=q.text;
+ $('remove-error').textContent='';
+ $('remove-dialog').showModal();
+ $('cancel-remove').focus();
+}
+function cancelRemoval(){$('remove-dialog').close();pendingRemoval=null;}
+$('cancel-remove').onclick=$('close-remove').onclick=cancelRemoval;
+$('remove-dialog').addEventListener('cancel',()=>{pendingRemoval=null;});
+$('confirm-remove').onclick=()=>{
+ if(!pendingRemoval)return;
+ const q=allQuestions().find(q=>q.id===pendingRemoval.id);
+ if(!q||state.decisions[q.id]!=='kept'||q.text!==pendingRemoval.text){cancelRemoval();renderDuplicateResults();notify('The question changed. Please review it again.');return;}
+ if(!commit(next=>{next.decisions[q.id]='rejected';next.history=next.history.filter(h=>h.id!==q.id);next.bankAddedAt=next.bankAddedAt||{};next.bankAddedAt[q.id]=Date.now();})){$('remove-error').textContent='Could not save. Your question is still kept.';return;}
+ cancelRemoval();renderDuplicateResults();if(view==='bank')renderBank();else if(view==='home')renderHome();notify('Moved to Rejected.');
+};
