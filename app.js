@@ -146,13 +146,13 @@ setTheme(savedTheme!=='light');
 $('theme-switch').onchange=()=>{const dark=$('theme-switch').checked;setTheme(dark);try{localStorage.setItem('questionReview.theme',dark?'dark':'light');}catch{notify('Theme changed for this visit.');}};
 
 const rewritingIds=new Set();
-const rewriteStyles=['casual','comedic','riddle','dramatic','deadpan'];
+
 $('rewrite-current').onclick=()=>{const q=current();if(q)rewriteQuestion(q.id);};
 async function rewriteQuestion(id){
  if(busy||rewritingIds.has(id))return;
  if(!aiSettings.url||!aiSettings.code){$('ai-settings').onclick();return;}
  const q=allQuestions().find(q=>q.id===id);if(!q)return;
- const step=q.rewriteStep||0,style=rewriteStyles[step%rewriteStyles.length];
+ const step=q.rewriteStep||0,style='natural';
  rewritingIds.add(id);updateRewriteButton();if(view==='bank')renderBank();
  try{
  const response=await fetch(aiSettings.url+'/rewrite',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+aiSettings.code},signal:AbortSignal.timeout(60000),body:JSON.stringify({category:q.category,text:q.rewriteOriginal||q.text,current:q.text,note:q.note||'',answer:q.answer||'',style,previous:q.rewriteHistory||[]})});
@@ -166,7 +166,7 @@ async function rewriteQuestion(id){
  if(allQuestions().some(x=>x.id!==id&&x.category===q.category&&x.text.toLowerCase()===text.toLowerCase()))throw Error('That wording already exists. Try again.');
  if(!commit(next=>{next.edits[id]={...(next.edits[id]||{}),text,rewriteOriginal:q.rewriteOriginal||q.text,rewriteStep:step+1,rewriteHistory:[...(q.rewriteHistory||[]),q.text].slice(-10)};}))return;
  if(view==='review'&&!busy)renderReview();else if(view==='bank')renderBank();
- notify('Wording refreshed · '+style);
+ notify('Wording refreshed.');
  }catch(error){notify(error.name==='TimeoutError'?'Wording refresh timed out. Try again.':error.message);}
  finally{rewritingIds.delete(id);updateRewriteButton();if(view==='bank')renderBank();}
 }
