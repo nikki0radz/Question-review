@@ -1,0 +1,7 @@
+{
+  "name": "question-review-ai",
+  "main": "index.mjs",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": true,
+  "vars": { "ALLOWED_ORIGIN": "https://nikki0radz.github.io", "OPENAI_MODEL": "gpt-4.1-mini" }
+}
