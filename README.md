@@ -23,3 +23,12 @@ In Worker Settings → Variables and Secrets, add runtime secrets OPENAI_API_KEY
 Open Connect AI in the app, enter the HTTPS workers.dev URL and matching review access code. Generate 10 questions inside any category. Kept, rejected and user-written examples guide generation; new suggestions enter the review queue. Only kept questions are exported.
 
 The default model is gpt-4.1-mini. ALLOWED_ORIGIN is configured for https://nikki0radz.github.io. Requests are authenticated, capped at 10 suggestions, and use structured Responses API output. Live generation requires valid runtime secrets and an OpenAI account with API access.
+
+
+## Prewritten review queue (28 October 2026)
+
+`prewritten-questions.js` contains 1,000 objective Pick ’n’ Mix candidates in 25 mixed batches of 40. They are candidates to swipe, not automatically kept questions. They use visible comparisons or self-reported facts, without phone searches or subjective rankings. Nobody qualifies or remembers? Skip; resolve ties at random. Intimate and financial questions can be rejected like any other candidate.
+
+The prewritten queue appears first by default. Exact matches already in the local bank are suppressed, so the number of new cards may be below 1,000. Existing IDs, decisions, edits, custom questions, generated questions and undo history are preserved. Saved decisions live only in the user's browser and cannot be inspected from GitHub.
+
+Paid AI tools are off on each page load. Open Optional AI tools on the home screen to enable generation, rewriting and duplicate review for that visit. Connecting a Worker alone never enables them. Loading, swiping, editing and undoing prewritten candidates makes no AI requests.

@@ -51,3 +51,6 @@
 #confirm-remove{width:auto;flex:1.6;background:var(--pink);color:#241a29}
 [data-theme=light] #confirm-remove{color:white}
 #remove-error:empty{display:none}#remove-error{color:var(--red)}
+
+
+.optional-ai{margin:24px 0;font-size:14px;line-height:1.5}.optional-ai summary,#paid-generation summary{cursor:pointer;padding:12px 0}.optional-ai input{width:auto;margin-right:8px}.optional-ai p,#paid-generation p{font-size:13px;line-height:1.5;opacity:.75}.quick-rule{font-size:11px;line-height:1.4;opacity:.65;margin-top:18px}#paid-generation{margin:18px 0}#paid-generation #generate{width:100%}
